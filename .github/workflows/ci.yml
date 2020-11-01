@@ -1,0 +1,38 @@
+name: Continuous Integration
+on:
+  # Every push
+  push: {}
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ windows, macos, ubuntu ]
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Cache Maya Devkit
+      uses: actions/cache@v2
+      with:
+        path: ./Maya*_Devkit
+        key: ${{ matrix.os }}
+    - name: Setup CMake
+      uses: lukka/get-cmake@v3.18.3
+    - name: Build
+      run: |
+        # Configure
+        mkdir ./out
+        mkdir ./out/${{ matrix.os }}
+        cd ./out/${{ matrix.os }}
+        cmake ../../
+        cd ../../
+        # Build
+        cmake --build ./out/${{ matrix.os }}
+    - name: Persist compiled plugin
+      uses: actions/upload-artifact@v2
+      with:
+        name: maya-plugin-for-${{ matrix.os }}
+        path: |
+          ./out/${{ matrix.os }}/MayaPluginAdapter.so
+          ./out/${{ matrix.os }}/Debug/MayaPluginAdapter.mll
+          ./out/${{ matrix.os }}/MayaPluginAdapter.bundle
